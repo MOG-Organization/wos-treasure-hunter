@@ -60,6 +60,10 @@ td b{font-size:18px}
 details summary{cursor:pointer;font-weight:700}
 details[open] summary{margin-bottom:6px}
 details ul{padding-left:20px;margin:6px 0}
+.modes{display:grid;grid-template-columns:1fr 1fr;gap:4px;background:var(--soft);padding:4px;border-radius:12px;margin-bottom:12px}
+.mode{font:inherit;font-weight:700;border:0;border-radius:9px;padding:8px 4px;background:transparent;color:var(--muted);cursor:pointer}
+.mode[aria-selected="true"]{background:var(--card);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.15)}
+#budget{width:96px}
 .trackScroll{overflow-x:auto;padding-bottom:6px}
 #track{position:relative}
 .track{position:relative;height:104px}
@@ -99,8 +103,13 @@ details ul{padding-left:20px;margin:6px 0}
   </div>
 
   <div class="card">
-    <h2>② 何回当てたいか選ぶ</h2>
-    <div class="goals" id="goals"></div>
+    <h2>② 目標か予算を決める</h2>
+    <div class="modes">
+      <button type="button" class="mode" data-m="goal">累計の当たり回数で決める</button>
+      <button type="button" class="mode" data-m="budget">予算で決める</button>
+    </div>
+    <div id="goalBox"><p class="muted" style="margin:0 0 8px">究極の秘宝を累計で何回当てたいか選んでください。下の小さい文字はその回数でもらえる累計報酬です。</p><div class="goals" id="goals"></div></div>
+    <div id="budgetBox"><div class="row"><div>予算<small>期間中の合計（円）</small></div><div class="step" data-for="budget"><button type="button" aria-label="減らす">−</button><input id="budget" type="number" min="0" step="1000" value="5000"><button type="button" aria-label="増やす">＋</button></div></div></div>
     <div id="answer"></div>
   </div>
 
@@ -153,7 +162,7 @@ const GOALS=[[20,'エナ石×50'],[30,'装備の箱×50'],[40,'エナ石×50'],[
 const REFUND={5:10};for(let h=15;h<100;h+=10)REFUND[h]=20;
 const RUNS=3000;
 const $=id=>document.getElementById(id);
-let goal=30;
+let goal=30,mode='goal';
 
 function weight(rare,k){if(k<=6)return 2;if(k<=12)return 5;if(k<=18||!rare)return 10;return 20;}
 function table(rare,R){const cap=rare?22:14,n=rare?R:24,a=[0];for(let k=1;k<=cap;k++){if(k>=cap){a.push(1);continue;}const w=weight(rare,k);a.push(w/(w+10*(n-(k-1))));}return a;}
@@ -170,13 +179,14 @@ function total(s,c){
   PACKS.forEach(p=>{const k=c[p.id]||0;picks+=k*p.picks;yen+=k*p.yen;n+=k;});
   return {picks:picks+10*Math.min(chargeable,n),yen};
 }
-function hitsWith(s,picks){
+function hitsDist(s,picks){
   const a=[];
   for(let i=0;i<RUNS;i++){let h=s.hits,k=s.digs,p=picks;
     while(p>=1&&h<2000){p--;k++;const t=(h+1)%5===0?PR:PN;if(Math.random()<t[k]){h++;k=0;p+=REFUND[h]||0;}}
     a.push(h);}
-  a.sort((x,y)=>x-y);return a[Math.floor(a.length/2)];
+  a.sort((x,y)=>x-y);return a;
 }
+function hitsWith(s,picks){const a=hitsDist(s,picks);return a[Math.floor(a.length/2)];}
 function needFor(s,T){
   const a=[];
   for(let i=0;i<RUNS;i++){let h=s.hits,k=s.digs,d=0,ref=0,need=0;
@@ -192,6 +202,38 @@ function cheapest(s,need){
   })(0);
   return best;
 }
+function bestForBudget(s,B){
+  const lim=PACKS.map(p=>s.days*p.perDay),c={};let best=null;
+  (function rec(i,yen){
+    if(yen>B)return;
+    if(i===PACKS.length){const r=total(s,c);if(!best||r.picks>best.picks||(r.picks===best.picks&&r.yen<best.yen))best={...r,c:{...c}};return;}
+    for(let n=0;n<=lim[i];n++){if(yen+n*PACKS[i].yen>B)break;c[PACKS[i].id]=n;rec(i+1,yen+n*PACKS[i].yen);}
+    c[PACKS[i].id]=0;
+  })(0,0);
+  return best;
+}
+function renderBudget(s){
+  const B=num('budget',0,100000000);
+  const best=bestForBudget(s,B);
+  const a=hitsDist(s,best.picks);
+  const med=a[Math.floor(a.length/2)],lo=a[Math.floor(a.length*.1)];
+  const list=PACKS.filter(p=>best.c[p.id]>0).map(p=>`<li>${p.name}宝探しパック（¥${p.yen.toLocaleString()}）を<b>${howToBuy(p,best.c[p.id],s.days)}</b></li>`).join('');
+  const got={},may={};MILES.forEach(([m,n,c])=>{if(m<=s.hits||n==='つるはし')return;if(m<=lo)got[n]=(got[n]||0)+c;else if(m<=med)may[n]=(may[n]||0)+c;});
+  const gotStr=Object.entries(got).map(([n,c])=>`<b>${n}×${c}</b>`).join('、');
+  const mayStr=Object.entries(may).map(([n,c])=>`${n}×${c}`).join('、');
+  const next=MILES.find(([m,n])=>m>med&&n!=='つるはし');
+  $('answer').innerHTML=`<div class="answer">
+    <div class="muted">¥${B.toLocaleString()}の予算で当てられる回数（累計）</div>
+    <div class="yen">約${med}回</div>
+    <p class="muted">運が悪くても約${lo}回</p>
+    ${list?`<ul>${list}</ul>`:'<p>この予算で買えるパックはありません。無課金の場合の結果です。</p>'}
+    <p>ほぼ確実にもらえる累計報酬：${gotStr||'なし'}</p>
+    ${mayStr?`<p>運が普通ならもらえる：${mayStr}</p>`:''}
+    ${next?`<p class="muted">次の報酬は${next[0]}回の${next[1]}×${next[2]}（あと約${next[0]-med}回）。</p>`:''}
+    <p class="muted">実際に使うのは¥${best.yen.toLocaleString()}、つるはしは無料分と合わせて${best.picks.toLocaleString()}本です。累計報酬のつるはしも計算に含めています。</p>
+  </div>`;
+  return med;
+}
 function howToBuy(p,k,days){
   const max=days*p.perDay;
   if(p.perDay===1&&k===days)return `毎日1つ`;
@@ -200,12 +242,13 @@ function howToBuy(p,k,days){
 }
 
 function renderGoals(s){
-  $('goals').innerHTML=GOALS.map(([g,label])=>`<button type="button" class="goal" data-g="${g}" aria-pressed="${g===goal}" ${g<=s.hits?'disabled':''}><b>${g}回</b><span>${label}</span></button>`).join('');
+  $('goals').innerHTML=GOALS.map(([g,label])=>`<button type="button" class="goal" data-g="${g}" aria-pressed="${g===goal}" ${g<=s.hits?'disabled':''}><b>累計${g}回</b><span>${label}</span></button>`).join('');
   $('goals').querySelectorAll('.goal').forEach(b=>b.onclick=()=>{goal=+b.dataset.g;render();});
 }
 function renderAnswer(s){
+  if(mode==='budget')return renderBudget(s);
   const box=$('answer');
-  if(goal<=s.hits){box.innerHTML=`<div class="answer">すでに${goal}回当てています。ほかの目標を選んでください。</div>`;return s.hits;}
+  if(goal<=s.hits){box.innerHTML=`<div class="answer">すでに累計${goal}回当てています。ほかの目標を選んでください。</div>`;return s.hits;}
   const need=needFor(s,goal);
   const best=cheapest(s,need);
   const free=total(s,{});
@@ -214,7 +257,7 @@ function renderAnswer(s){
   }
   const list=PACKS.filter(p=>best.c[p.id]>0).map(p=>`<li>${p.name}宝探しパック（¥${p.yen.toLocaleString()}）を<b>${howToBuy(p,best.c[p.id],s.days)}</b></li>`).join('');
   box.innerHTML=`<div class="answer">
-    <div class="muted">${goal}回当てるのに一番安い課金額</div>
+    <div class="muted">累計${goal}回当てるのに一番安い課金額</div>
     <div class="yen">${best.yen===0?'無課金でOK':'¥'+best.yen.toLocaleString()}</div>
     ${list?`<ul>${list}</ul>`:''}
     <p class="muted">必要なつるはしは約${need.toLocaleString()}本。無料分（ミッションと手持ち）は${free.picks.toLocaleString()}本です。この買い方なら、ほぼ確実（9割）に届きます。</p>
@@ -243,28 +286,32 @@ function renderCompare(s){
     ['上と＋レジェンド4つ',{n:D,g:D,l:4}]
   ];
   const rows=plans.map(([name,c])=>{const r=total(s,c);return {name,yen:r.yen,hits:hitsWith(s,r.picks)};});
-  const max=Math.ceil(Math.max(goal,...rows.map(r=>r.hits))*1.08/10)*10;
+  const max=Math.ceil(Math.max(mode==='goal'?goal:0,...rows.map(r=>r.hits))*1.08/10)*10;
   const pct=v=>(v/max*100).toFixed(1)+'%';
-  $('compare').innerHTML=rows.map(r=>`<div class="cmp"><div class="cmp-top"><span>${r.name}</span><span>¥${r.yen.toLocaleString()}</span></div><div class="barrow"><div class="bar"><div class="fill${r.hits>=goal?' ok':''}" style="width:${pct(r.hits)}"></div><div class="goalline" style="left:${pct(goal)}" title="目標${goal}回"></div></div><b>約${r.hits}回</b></div></div>`).join('');
+  $('compare').innerHTML=rows.map(r=>`<div class="cmp"><div class="cmp-top"><span>${r.name}</span><span>¥${r.yen.toLocaleString()}</span></div><div class="barrow"><div class="bar"><div class="fill${mode==='goal'&&r.hits>=goal?' ok':''}" style="width:${pct(r.hits)}"></div>${mode==='goal'?`<div class="goalline" style="left:${pct(goal)}" title="目標${goal}回"></div>`:''}</div><b>約${r.hits}回</b></div></div>`).join('');
 }
 function render(){
   const s=state();PR=table(true,s.rareN);save();
+  document.querySelectorAll('.mode').forEach(b=>b.setAttribute('aria-selected',b.dataset.m===mode));
+  $('goalBox').hidden=mode!=='goal';$('budgetBox').hidden=mode!=='budget';
   renderGoals(s);const ex=renderAnswer(s);renderTrack(s,ex);renderCompare(s);
 }
 
 document.querySelectorAll('.step').forEach(st=>{
   const inp=$(st.dataset.for);const [m,p]=st.querySelectorAll('button');
-  m.onclick=()=>{inp.value=Math.max(+inp.min||0,(parseInt(inp.value,10)||0)-1);schedule();};
-  p.onclick=()=>{inp.value=(parseInt(inp.value,10)||0)+1;schedule();};
+  const stp=+inp.step||1;
+  m.onclick=()=>{inp.value=Math.max(+inp.min||0,(parseInt(inp.value,10)||0)-stp);schedule();};
+  p.onclick=()=>{inp.value=(parseInt(inp.value,10)||0)+stp;schedule();};
 });
 let timer;function schedule(){clearTimeout(timer);timer=setTimeout(render,150);}
 document.querySelectorAll('input').forEach(el=>el.addEventListener('input',schedule));
+document.querySelectorAll('.mode').forEach(b=>b.onclick=()=>{mode=b.dataset.m;render();});
 
 const KEY='hiho-calc-v2';
-function save(){try{localStorage.setItem(KEY,JSON.stringify({hand:$('hand').value,hits:$('hits').value,days:$('days').value,digs:$('digs').value,rareN:$('rareN').value,freeDone:$('freeDone').checked,chargeDone:$('chargeDone').checked,goal}));}catch(e){}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify({hand:$('hand').value,hits:$('hits').value,days:$('days').value,digs:$('digs').value,rareN:$('rareN').value,freeDone:$('freeDone').checked,chargeDone:$('chargeDone').checked,goal,mode,budget:$('budget').value}));}catch(e){}}
 function load(){try{const d=JSON.parse(localStorage.getItem(KEY)||'null');if(!d)return;
   ['hand','hits','days','digs','rareN'].forEach(k=>{if(d[k]!=null)$(k).value=d[k];});
-  $('freeDone').checked=!!d.freeDone;$('chargeDone').checked=!!d.chargeDone;if(d.goal)goal=d.goal;}catch(e){}}
+  $('freeDone').checked=!!d.freeDone;$('chargeDone').checked=!!d.chargeDone;if(d.goal)goal=d.goal;if(d.mode)mode=d.mode;if(d.budget!=null)$('budget').value=d.budget;}catch(e){}}
 load();render();
 </script>
 </body>
