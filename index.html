@@ -93,7 +93,7 @@ details ul{padding-left:20px;margin:6px 0}
 
   <div class="card">
     <h2>① いまの状況を入れる</h2>
-    <div class="row"><div>手持ちのつるはし</div><div class="step" data-for="hand"><button type="button" aria-label="減らす">−</button><input id="hand" type="number" min="0" value="41"><button type="button" aria-label="増やす">＋</button></div></div>
+    <div class="row"><div>手持ちのつるはし<small>秘宝ハンター画面の右上に表示されている数</small></div><div class="step" data-for="hand"><button type="button" aria-label="減らす">−</button><input id="hand" type="number" min="0" value="0"><button type="button" aria-label="増やす">＋</button></div></div>
     <div class="row"><div>累計の当たり数<small>究極の秘宝を当てた回数</small></div><div class="step" data-for="hits"><button type="button" aria-label="減らす">−</button><input id="hits" type="number" min="0" value="0"><button type="button" aria-label="増やす">＋</button></div></div>
     <div class="row"><div>イベント残り日数<small>今日を含む</small></div><div class="step" data-for="days"><button type="button" aria-label="減らす">−</button><input id="days" type="number" min="1" max="14" value="5"><button type="button" aria-label="増やす">＋</button></div></div>
   </div>
@@ -221,7 +221,7 @@ function renderAnswer(s){
   </div>`;
   return hitsWith(s,best.picks);
 }
-const MILES=[[2,'パーツ',5],[5,'つるはし',10],[10,'素材',20],[15,'つるはし',20],[20,'エナ石',50],[25,'つるはし',20],[30,'装備の箱',50],[35,'つるはし',20],[40,'エナ石',50],[45,'つるはし',20],[50,'装備の箱',50],[55,'つるはし',20],[60,'ミスリル',5],[65,'つるはし',20],[70,'ミスリル',5],[75,'つるはし',20],[80,'ミスリル',10],[85,'つるはし',20],[90,'ミスリル',10],[95,'つるはし',20],[100,'ミスリル',10]];
+const MILES=[[2,'ナット',5],[5,'つるはし',10],[10,'共通欠片',20],[15,'つるはし',20],[20,'エナ石',50],[25,'つるはし',20],[30,'装備の箱',50],[35,'つるはし',20],[40,'エナ石',50],[45,'つるはし',20],[50,'装備の箱',50],[55,'つるはし',20],[60,'ミスリル',5],[65,'つるはし',20],[70,'ミスリル',5],[75,'つるはし',20],[80,'ミスリル',10],[85,'つるはし',20],[90,'ミスリル',10],[95,'つるはし',20],[100,'ミスリル',20]];
 const TW=72;
 function xFor(h){const v=[0,...MILES.map(m=>m[0])];if(h>=100)return (v.length-1)*TW;for(let i=0;i<v.length-1;i++){if(h<v[i+1])return (i+(h-v[i])/(v[i+1]-v[i]))*TW;}return 0;}
 function renderTrack(s,ex){
