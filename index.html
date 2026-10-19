@@ -66,6 +66,11 @@ details ul{padding-left:20px;margin:6px 0}
 .mode[aria-selected="true"]{background:var(--card);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.15)}
 #budget{width:96px}
 .trackScroll{overflow-x:auto;padding-bottom:6px}
+.rtable{min-width:0}
+.rtable td,.rtable th{padding:7px 6px;white-space:nowrap}
+.rtable .pk{color:var(--ice);font-weight:700}
+.rtable tr.got td{opacity:.5}
+.rtable .will{color:var(--amber);font-weight:700}
 #track{position:relative}
 .track{position:relative;height:104px}
 .tline,.tfill,.tfill2{position:absolute;left:0;top:64px;height:10px;border-radius:5px}
@@ -118,6 +123,11 @@ details ul{padding-left:20px;margin:6px 0}
     <h2>累計報酬</h2>
     <div class="trackScroll" id="trackScroll"><div id="track"></div></div>
     <p class="muted" style="margin:6px 0 0">濃いバーがいまの当たり数、薄いバーが②のおすすめの買い方で届く見込み（平均的な運の場合）です。横にスクロールできます。</p>
+    <details open style="margin-top:12px">
+      <summary>報酬一覧</summary>
+      <div id="rewardTotal" class="muted" style="margin:4px 0 8px"></div>
+      <table class="rtable" id="rewardList"></table>
+    </details>
   </div>
 
   <div class="card">
@@ -159,7 +169,7 @@ const PACKS=[
   {id:'e',name:'エピック',picks:120,yen:8000,perDay:1},
   {id:'l',name:'レジェンド',picks:240,yen:15800,perDay:3}
 ];
-const GOALS=[[20,'エナ石×50'],[30,'装備の箱×50'],[40,'エナ石×50'],[50,'装備の箱×50'],[100,'最後まで']];
+const GOALS=[[20,'エナ石×50'],[30,'装備の箱×50'],[40,'エナ石×50'],[50,'装備の箱×50'],[60,'ミスリル×5'],[70,'ミスリル×5'],[80,'ミスリル×10'],[90,'ミスリル×10'],[100,'ミスリル×20']];
 const REFUND={5:10};for(let h=15;h<100;h+=10)REFUND[h]=20;
 const RUNS=3000;
 const $=id=>document.getElementById(id);
@@ -275,6 +285,12 @@ function renderTrack(s,ex){
     h+=`<div class="node${st}${pk}" style="left:${(i+1)*TW}px"><div class="item"><span>${m[1]}</span><span>×${m[2]}</span></div><div class="dot"></div><div class="cnt">${m[0]}回</div></div>`;});
   $('track').innerHTML=h+'</div>';
   $('trackScroll').scrollLeft=Math.max(0,xFor(Math.min(s.hits,100))-60);
+  const tot={};MILES.forEach(([m,n,c])=>tot[n]=(tot[n]||0)+c);
+  $('rewardTotal').innerHTML='累計100回までの合計：'+Object.entries(tot).map(([n,c])=>`${n}×${c}`).join('、');
+  $('rewardList').innerHTML='<tr><th>累計</th><th style="text-align:left">報酬</th><th>状態</th></tr>'+MILES.map(([m,n,c])=>{
+    const st=m<=s.hits?'受取済':m<=ex?'<span class="will">届きそう</span>':'';
+    return `<tr class="${m<=s.hits?'got':''}"><td>${m}回</td><td style="text-align:left" class="${n==='つるはし'?'pk':''}">${n}×${c}</td><td>${st}</td></tr>`;
+  }).join('');
 }
 function renderCompare(s){
   const D=s.days;
