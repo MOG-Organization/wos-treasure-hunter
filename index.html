@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>秘宝ハンター 課金プラン計算</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#E6EEF4; --card:#F7FAFC; --soft:#DAE6EF; --ink:#152637; --muted:#52677A; --line:#B6CAD9;
+  --ice:#2F79AA; --amber:#A9701A; --amberSoft:rgba(169,112,26,.13); --btnInk:#fff;
+  color-scheme:light;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0D1923; --card:#152534; --soft:#1F3447; --ink:#E2EDF5; --muted:#9AB0C2; --line:#2C4459;
+  --ice:#7DBDE6; --amber:#E3AE58; --amberSoft:rgba(227,174,88,.15); --btnInk:#0D1923; color-scheme:dark;}}
+:root[data-theme="dark"]{
+  --bg:#0D1923; --card:#152534; --soft:#1F3447; --ink:#E2EDF5; --muted:#9AB0C2; --line:#2C4459;
+  --ice:#7DBDE6; --amber:#E3AE58; --amberSoft:rgba(227,174,88,.15); --btnInk:#0D1923; color-scheme:dark;}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Zen Kaku Gothic New","Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;font-size:16px;line-height:1.7}
+.wrap{max-width:640px;margin:0 auto;padding:20px 16px 56px;display:grid;grid-template-columns:minmax(0,1fr);gap:16px}
+.wrap>*{min-width:0}
+h1{font-size:24px;font-weight:900;margin:6px 0 0;line-height:1.3}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px}
+h2{font-size:18px;font-weight:900;margin:0 0 10px}
+.row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 0}
+.row+.row{border-top:1px dashed var(--line)}
+.row small{display:block;color:var(--muted);font-size:12px;line-height:1.4}
+.step{display:flex;align-items:center;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--bg);flex:none}
+.step button{width:40px;height:40px;border:0;background:transparent;color:var(--ink);font-size:20px;cursor:pointer}
+.step input{width:66px;height:40px;border:0;border-left:1px solid var(--line);border-right:1px solid var(--line);background:var(--card);color:var(--ink);text-align:center;font:inherit;font-weight:700}
+input[type=number]{-moz-appearance:textfield}
+input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+input[type=checkbox]{width:22px;height:22px;accent-color:var(--ice);flex:none}
+:focus-visible{outline:2px solid var(--ice);outline-offset:2px}
+.goals{display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:8px}
+.goal{font:inherit;border:2px solid var(--line);background:var(--bg);color:var(--ink);border-radius:12px;padding:10px 6px;cursor:pointer;line-height:1.35}
+.goal b{display:block;font-size:20px}
+.goal span{font-size:12px;color:var(--muted)}
+.goal[aria-pressed="true"]{border-color:var(--amber);background:var(--amberSoft)}
+.goal:disabled{opacity:.4;cursor:default}
+.answer{margin-top:14px;padding:16px;border-radius:12px;background:var(--amberSoft)}
+.answer .yen{font-size:34px;font-weight:900;line-height:1.2;color:var(--amber)}
+.answer ul{margin:8px 0;padding-left:0;list-style:none}
+.answer li{padding:6px 0;border-bottom:1px solid var(--line)}
+.answer li:last-child{border-bottom:0}
+.answer p{margin:6px 0 0}
+.muted{color:var(--muted);font-size:13px}
+.tablewrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:380px}
+th,td{padding:9px 8px;border-bottom:1px solid var(--line);text-align:right;vertical-align:top}
+th:first-child,td:first-child{text-align:left}
+th{color:var(--muted);font-weight:400;font-size:13px}
+td b{font-size:18px}
+details summary{cursor:pointer;font-weight:700}
+details[open] summary{margin-bottom:6px}
+details ul{padding-left:20px;margin:6px 0}
+.trackScroll{overflow-x:auto;padding-bottom:6px}
+#track{position:relative}
+.track{position:relative;height:104px}
+.tline,.tfill,.tfill2{position:absolute;left:0;top:64px;height:10px;border-radius:5px}
+.tline{right:0;background:var(--soft)}
+.tfill2{background:var(--amber);opacity:.4}
+.tfill{background:var(--amber)}
+.node{position:absolute;top:0;width:68px;transform:translateX(-50%);text-align:center}
+.node .item{height:52px;font-size:12px;line-height:1.35;display:flex;flex-direction:column;justify-content:flex-end;padding-bottom:4px}
+.node.pick .item{color:var(--ice);font-weight:700}
+.node .dot{width:16px;height:16px;margin:9px auto 0;border-radius:50%;background:var(--card);border:3px solid var(--line);position:relative}
+.node.got .dot{background:var(--amber);border-color:var(--amber)}
+.node.will .dot{border-color:var(--amber)}
+.node.got .item{opacity:.5}
+.node .cnt{font-size:12px;color:var(--muted);margin-top:2px}
+.cmp{padding:10px 0;border-bottom:1px solid var(--line)}
+.cmp:last-child{border-bottom:0}
+.cmp-top{display:flex;justify-content:space-between;gap:10px;font-size:14px}
+.cmp-top span:last-child{color:var(--muted)}
+.barrow{display:flex;align-items:center;gap:10px;margin-top:6px}
+.bar{position:relative;flex:1;height:18px;border-radius:9px;background:var(--soft)}
+.fill{position:absolute;left:0;top:0;bottom:0;border-radius:9px;background:var(--ice);transition:width .3s}
+.fill.ok{background:var(--amber)}
+.goalline{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--ink);opacity:.7}
+.barrow b{width:64px;text-align:right;font-size:17px;flex:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>秘宝ハンター 課金プラン計算</h1>
+
+  <div class="card">
+    <h2>① いまの状況を入れる</h2>
+    <div class="row"><div>手持ちのつるはし</div><div class="step" data-for="hand"><button type="button" aria-label="減らす">−</button><input id="hand" type="number" min="0" value="41"><button type="button" aria-label="増やす">＋</button></div></div>
+    <div class="row"><div>累計の当たり数<small>究極の秘宝を当てた回数</small></div><div class="step" data-for="hits"><button type="button" aria-label="減らす">−</button><input id="hits" type="number" min="0" value="0"><button type="button" aria-label="増やす">＋</button></div></div>
+    <div class="row"><div>イベント残り日数<small>今日を含む</small></div><div class="step" data-for="days"><button type="button" aria-label="減らす">−</button><input id="days" type="number" min="1" max="14" value="5"><button type="button" aria-label="増やす">＋</button></div></div>
+  </div>
+
+  <div class="card">
+    <h2>② 何回当てたいか選ぶ</h2>
+    <div class="goals" id="goals"></div>
+    <div id="answer"></div>
+  </div>
+
+  <div class="card">
+    <h2>累計報酬</h2>
+    <div class="trackScroll" id="trackScroll"><div id="track"></div></div>
+    <p class="muted" style="margin:6px 0 0">濃いバーがいまの当たり数、薄いバーが②のおすすめの買い方で届く見込み（平均的な運の場合）です。横にスクロールできます。</p>
+  </div>
+
+  <div class="card">
+    <h2>課金額ごとの当たり回数</h2>
+    <div id="compare"></div>
+    <p class="muted" style="margin:8px 0 0">当たり回数は平均的な運の場合です。縦線は②で選んだ目標で、届くバーはオレンジになります。「毎日」は残り日数ぶん買う意味です。</p>
+  </div>
+
+  <div class="card">
+    <details>
+      <summary>細かい設定</summary>
+      <div class="row"><div>今の階で掘った回数<small>まだ当たっていない分</small></div><div class="step" data-for="digs"><button type="button" aria-label="減らす">−</button><input id="digs" type="number" min="0" value="0"><button type="button" aria-label="増やす">＋</button></div></div>
+      <div class="row"><div>今日の無料ミッション（16本）は受取済み</div><input id="freeDone" type="checkbox" checked></div>
+      <div class="row"><div>今日のチャージ報酬（10本）は受取済み</div><input id="chargeDone" type="checkbox"></div>
+      <div class="row"><div>レア階のその他報酬の数<small>未確認のため仮定</small></div><div class="step" data-for="rareN"><button type="button" aria-label="減らす">−</button><input id="rareN" type="number" min="22" max="60" value="34"><button type="button" aria-label="増やす">＋</button></div></div>
+    </details>
+  </div>
+
+  <div class="card">
+    <details>
+      <summary>計算の根拠</summary>
+      <ul class="muted">
+        <li>つるはしの単価は、ノーマル¥50、グッド¥57、レジェンド¥66、レア・エピック¥67。購入した日は「任意で1回チャージ」の10本も入ります。</li>
+        <li>無料ミッションは1日16本（巨獣5・同盟貢献5・部隊総力6）。</li>
+        <li>累計報酬のつるはし（5回目10本、15〜95回目は10回ごとに20本）も計算に含めています。</li>
+        <li>確率はゲーム内「確率詳細」の値。ノーマル階は14回目、レア階（5の倍数の階）は22回目で確定します。1階あたり平均でノーマル約12.6回、レア約18回の宝探しが必要です。</li>
+        <li>おすすめの買い方は、9割の確率で目標に届く組み合わせのうち最も安いものです。</li>
+        <li>パックの購入回数はミッション更新と同時にリセットされると仮定しています。データは2026年10月19日のゲーム画面に基づきます。</li>
+      </ul>
+    </details>
+  </div>
+</div>
+
+<script>
+const PACKS=[
+  {id:'n',name:'ノーマル',picks:16,yen:800,perDay:1},
+  {id:'g',name:'グッド',picks:28,yen:1600,perDay:1},
+  {id:'r',name:'レア',picks:48,yen:3200,perDay:1},
+  {id:'e',name:'エピック',picks:120,yen:8000,perDay:1},
+  {id:'l',name:'レジェンド',picks:240,yen:15800,perDay:3}
+];
+const GOALS=[[20,'エナ石×50'],[30,'装備の箱×50'],[40,'エナ石×50'],[50,'装備の箱×50'],[100,'最後まで']];
+const REFUND={5:10};for(let h=15;h<100;h+=10)REFUND[h]=20;
+const RUNS=3000;
+const $=id=>document.getElementById(id);
+let goal=30;
+
+function weight(rare,k){if(k<=6)return 2;if(k<=12)return 5;if(k<=18||!rare)return 10;return 20;}
+function table(rare,R){const cap=rare?22:14,n=rare?R:24,a=[0];for(let k=1;k<=cap;k++){if(k>=cap){a.push(1);continue;}const w=weight(rare,k);a.push(w/(w+10*(n-(k-1))));}return a;}
+const PN=table(false);let PR;
+
+function num(id,min,max){let v=parseInt($(id).value,10);if(isNaN(v))v=min;return Math.max(min,Math.min(max??1e9,v));}
+function state(){
+  const s={hand:num('hand',0),hits:num('hits',0,1000),days:num('days',1,14),rareN:num('rareN',22,60),freeDone:$('freeDone').checked,chargeDone:$('chargeDone').checked};
+  s.digs=num('digs',0,(s.hits%5===4?22:14)-1);return s;
+}
+function total(s,c){
+  const freeDays=(s.days-1)+(s.freeDone?0:1),chargeable=s.days-(s.chargeDone?1:0);
+  let picks=s.hand+16*freeDays,yen=0,n=0;
+  PACKS.forEach(p=>{const k=c[p.id]||0;picks+=k*p.picks;yen+=k*p.yen;n+=k;});
+  return {picks:picks+10*Math.min(chargeable,n),yen};
+}
+function hitsWith(s,picks){
+  const a=[];
+  for(let i=0;i<RUNS;i++){let h=s.hits,k=s.digs,p=picks;
+    while(p>=1&&h<2000){p--;k++;const t=(h+1)%5===0?PR:PN;if(Math.random()<t[k]){h++;k=0;p+=REFUND[h]||0;}}
+    a.push(h);}
+  a.sort((x,y)=>x-y);return a[Math.floor(a.length/2)];
+}
+function needFor(s,T){
+  const a=[];
+  for(let i=0;i<RUNS;i++){let h=s.hits,k=s.digs,d=0,ref=0,need=0;
+    while(h<T){d++;if(d-ref>need)need=d-ref;k++;const t=(h+1)%5===0?PR:PN;if(Math.random()<t[k]){h++;k=0;ref+=REFUND[h]||0;}}
+    a.push(need);}
+  a.sort((x,y)=>x-y);return a[Math.floor(a.length*.9)];
+}
+function cheapest(s,need){
+  const lim=PACKS.map(p=>s.days*p.perDay),c={};let best=null;
+  (function rec(i){
+    if(i===PACKS.length){const r=total(s,c);if(r.picks>=need&&(!best||r.yen<best.yen||(r.yen===best.yen&&r.picks>best.picks)))best={...r,c:{...c}};return;}
+    for(let n=0;n<=lim[i];n++){c[PACKS[i].id]=n;rec(i+1);}
+  })(0);
+  return best;
+}
+function howToBuy(p,k,days){
+  const max=days*p.perDay;
+  if(p.perDay===1&&k===days)return `毎日1つ`;
+  if(p.perDay===3&&k%days===0)return `毎日${k/days}つ`;
+  return `期間中に${k}つ`+(k<max?`（1日${p.perDay}つまで）`:'');
+}
+
+function renderGoals(s){
+  $('goals').innerHTML=GOALS.map(([g,label])=>`<button type="button" class="goal" data-g="${g}" aria-pressed="${g===goal}" ${g<=s.hits?'disabled':''}><b>${g}回</b><span>${label}</span></button>`).join('');
+  $('goals').querySelectorAll('.goal').forEach(b=>b.onclick=()=>{goal=+b.dataset.g;render();});
+}
+function renderAnswer(s){
+  const box=$('answer');
+  if(goal<=s.hits){box.innerHTML=`<div class="answer">すでに${goal}回当てています。ほかの目標を選んでください。</div>`;return s.hits;}
+  const need=needFor(s,goal);
+  const best=cheapest(s,need);
+  const free=total(s,{});
+  if(!best){
+    box.innerHTML=`<div class="answer"><p>残り${s.days}日では、全パックを上限まで買っても${goal}回には届きません。目標を下げてください。</p></div>`;return s.hits;
+  }
+  const list=PACKS.filter(p=>best.c[p.id]>0).map(p=>`<li>${p.name}宝探しパック（¥${p.yen.toLocaleString()}）を<b>${howToBuy(p,best.c[p.id],s.days)}</b></li>`).join('');
+  box.innerHTML=`<div class="answer">
+    <div class="muted">${goal}回当てるのに一番安い課金額</div>
+    <div class="yen">${best.yen===0?'無課金でOK':'¥'+best.yen.toLocaleString()}</div>
+    ${list?`<ul>${list}</ul>`:''}
+    <p class="muted">必要なつるはしは約${need.toLocaleString()}本。無料分（ミッションと手持ち）は${free.picks.toLocaleString()}本です。この買い方なら、ほぼ確実（9割）に届きます。</p>
+  </div>`;
+  return hitsWith(s,best.picks);
+}
+const MILES=[[2,'パーツ',5],[5,'つるはし',10],[10,'素材',20],[15,'つるはし',20],[20,'エナ石',50],[25,'つるはし',20],[30,'装備の箱',50],[35,'つるはし',20],[40,'エナ石',50],[45,'つるはし',20],[50,'装備の箱',50],[55,'つるはし',20],[60,'ミスリル',5],[65,'つるはし',20],[70,'ミスリル',5],[75,'つるはし',20],[80,'ミスリル',10],[85,'つるはし',20],[90,'ミスリル',10],[95,'つるはし',20],[100,'ミスリル',10]];
+const TW=72;
+function xFor(h){const v=[0,...MILES.map(m=>m[0])];if(h>=100)return (v.length-1)*TW;for(let i=0;i<v.length-1;i++){if(h<v[i+1])return (i+(h-v[i])/(v[i+1]-v[i]))*TW;}return 0;}
+function renderTrack(s,ex){
+  const w=MILES.length*TW+TW/2;
+  let h=`<div class="track" style="width:${w}px"><div class="tline"></div><div class="tfill2" style="width:${xFor(Math.min(ex,100))}px"></div><div class="tfill" style="width:${xFor(Math.min(s.hits,100))}px"></div>`;
+  MILES.forEach((m,i)=>{const st=m[0]<=s.hits?' got':m[0]<=ex?' will':'';const pk=m[1]==='つるはし'?' pick':'';
+    h+=`<div class="node${st}${pk}" style="left:${(i+1)*TW}px"><div class="item"><span>${m[1]}</span><span>×${m[2]}</span></div><div class="dot"></div><div class="cnt">${m[0]}回</div></div>`;});
+  $('track').innerHTML=h+'</div>';
+  $('trackScroll').scrollLeft=Math.max(0,xFor(Math.min(s.hits,100))-60);
+}
+function renderCompare(s){
+  const D=s.days;
+  const plans=[
+    ['無課金',{}],
+    ['ノーマルを毎日',{n:D}],
+    ['ノーマル＋グッドを毎日',{n:D,g:D}],
+    ['上と＋レジェンド1つ',{n:D,g:D,l:1}],
+    ['上と＋レジェンド2つ',{n:D,g:D,l:2}],
+    ['上と＋レジェンド4つ',{n:D,g:D,l:4}]
+  ];
+  const rows=plans.map(([name,c])=>{const r=total(s,c);return {name,yen:r.yen,hits:hitsWith(s,r.picks)};});
+  const max=Math.ceil(Math.max(goal,...rows.map(r=>r.hits))*1.08/10)*10;
+  const pct=v=>(v/max*100).toFixed(1)+'%';
+  $('compare').innerHTML=rows.map(r=>`<div class="cmp"><div class="cmp-top"><span>${r.name}</span><span>¥${r.yen.toLocaleString()}</span></div><div class="barrow"><div class="bar"><div class="fill${r.hits>=goal?' ok':''}" style="width:${pct(r.hits)}"></div><div class="goalline" style="left:${pct(goal)}" title="目標${goal}回"></div></div><b>約${r.hits}回</b></div></div>`).join('');
+}
+function render(){
+  const s=state();PR=table(true,s.rareN);save();
+  renderGoals(s);const ex=renderAnswer(s);renderTrack(s,ex);renderCompare(s);
+}
+
+document.querySelectorAll('.step').forEach(st=>{
+  const inp=$(st.dataset.for);const [m,p]=st.querySelectorAll('button');
+  m.onclick=()=>{inp.value=Math.max(+inp.min||0,(parseInt(inp.value,10)||0)-1);schedule();};
+  p.onclick=()=>{inp.value=(parseInt(inp.value,10)||0)+1;schedule();};
+});
+let timer;function schedule(){clearTimeout(timer);timer=setTimeout(render,150);}
+document.querySelectorAll('input').forEach(el=>el.addEventListener('input',schedule));
+
+const KEY='hiho-calc-v2';
+function save(){try{localStorage.setItem(KEY,JSON.stringify({hand:$('hand').value,hits:$('hits').value,days:$('days').value,digs:$('digs').value,rareN:$('rareN').value,freeDone:$('freeDone').checked,chargeDone:$('chargeDone').checked,goal}));}catch(e){}}
+function load(){try{const d=JSON.parse(localStorage.getItem(KEY)||'null');if(!d)return;
+  ['hand','hits','days','digs','rareN'].forEach(k=>{if(d[k]!=null)$(k).value=d[k];});
+  $('freeDone').checked=!!d.freeDone;$('chargeDone').checked=!!d.chargeDone;if(d.goal)goal=d.goal;}catch(e){}}
+load();render();
+</script>
+</body>
+</html>
