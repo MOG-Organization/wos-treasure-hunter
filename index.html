@@ -38,9 +38,10 @@ input[type=number]{-moz-appearance:textfield}
 input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 input[type=checkbox]{width:22px;height:22px;accent-color:var(--ice);flex:none}
 :focus-visible{outline:2px solid var(--ice);outline-offset:2px}
-.goals{display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:8px}
+.goals{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:8px}
 .goal{font:inherit;border:2px solid var(--line);background:var(--bg);color:var(--ink);border-radius:12px;padding:10px 6px;cursor:pointer;line-height:1.35}
-.goal b{display:block;font-size:20px}
+.goal b{display:block;font-size:19px;white-space:nowrap}
+.goal span{white-space:nowrap}
 .goal span{font-size:12px;color:var(--muted)}
 .goal[aria-pressed="true"]{border-color:var(--amber);background:var(--amberSoft)}
 .goal:disabled{opacity:.4;cursor:default}
@@ -61,7 +62,7 @@ details summary{cursor:pointer;font-weight:700}
 details[open] summary{margin-bottom:6px}
 details ul{padding-left:20px;margin:6px 0}
 .modes{display:grid;grid-template-columns:1fr 1fr;gap:4px;background:var(--soft);padding:4px;border-radius:12px;margin-bottom:12px}
-.mode{font:inherit;font-weight:700;border:0;border-radius:9px;padding:8px 4px;background:transparent;color:var(--muted);cursor:pointer}
+.mode{font:inherit;font-weight:700;border:0;border-radius:9px;padding:8px 4px;background:transparent;color:var(--muted);cursor:pointer;white-space:nowrap}
 .mode[aria-selected="true"]{background:var(--card);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.15)}
 #budget{width:96px}
 .trackScroll{overflow-x:auto;padding-bottom:6px}
@@ -105,8 +106,8 @@ details ul{padding-left:20px;margin:6px 0}
   <div class="card">
     <h2>② 目標か予算を決める</h2>
     <div class="modes">
-      <button type="button" class="mode" data-m="goal">累計の当たり回数で決める</button>
-      <button type="button" class="mode" data-m="budget">予算で決める</button>
+      <button type="button" class="mode" data-m="goal">累計回数から</button>
+      <button type="button" class="mode" data-m="budget">予算から</button>
     </div>
     <div id="goalBox"><p class="muted" style="margin:0 0 8px">究極の秘宝を累計で何回当てたいか選んでください。下の小さい文字はその回数でもらえる累計報酬です。</p><div class="goals" id="goals"></div></div>
     <div id="budgetBox"><div class="row"><div>予算<small>期間中の合計（円）</small></div><div class="step" data-for="budget"><button type="button" aria-label="減らす">−</button><input id="budget" type="number" min="0" step="1000" value="5000"><button type="button" aria-label="増やす">＋</button></div></div></div>
